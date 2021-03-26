@@ -20,18 +20,20 @@ class PublicrestrictiondatasetsPlugin(plugins.SingletonPlugin, toolkit.DefaultDa
 
     # IDatasetForm
 
-    def _sysadmins_only(self, value, context):
-        # ensure that only sysadmins are setting a dataset to public
+    def _sysadmins_only_create(self, value, context):
+        # ensure that only sysadmins can create public packages
         log = logging.getLogger(__name__)
         
-        log.info('\n=====publicrestrictiondatasets:_sysadmins_only(value, context)=====')
-        log.info(value)
-        log.info(type(value))
-        log.info([m for m in dir(value) if not m.startswith('__')])
-        log.info(context)
-        log.info(type(context))
-        log.info([m for m in dir(context) if not m.startswith('__')])
-        
+        log.debug('\n=====publicrestrictiondatasets:_sysadmins_only_create(value, context)=====')
+        log.debug(value)
+        log.debug(type(value))
+        log.debug([m for m in dir(value) if not m.startswith('__')])
+        log.debug(context)
+        log.debug(type(context))
+        log.debug([m for m in dir(context) if not m.startswith('__')])
+        log.debug(type(context.get('package')))
+        log.debug([m for m in dir(context.get('package')) if not m.startswith('__')])
+
         username = context.get('user')
         user = model.User.get(username)
         private = value
@@ -40,28 +42,57 @@ class PublicrestrictiondatasetsPlugin(plugins.SingletonPlugin, toolkit.DefaultDa
         else:
             return value
 
-    def _modify_package_schema(self, schema):
+    def _sysadmins_only_update(self, value, context):
+        # ensure that only sysadmins can update packages' visibility status from private to public (but editors can still make other changes to already-public packages)
         log = logging.getLogger(__name__)
-        log.info('\n=====publicrestrictiondatasets:_modify_package_schema(self, schema)=====')
-        log.info(schema)
 
-        schema.update({
-            # our validator must come last, so the boolean_validator can execute first and convert value to bool
-            'private': schema['private'] + [self._sysadmins_only]  #[toolkit.get_validator('ignore_not_sysadmin')]
-        })
-        return schema
+        log.debug('\n=====publicrestrictiondatasets:_sysadmins_only_update(value, context)=====')
+        log.debug(value)
+        log.debug(type(value))
+        log.debug([m for m in dir(value) if not m.startswith('__')])
+        log.debug(context)
+        log.debug(type(context))
+        log.debug([m for m in dir(context) if not m.startswith('__')])
+        log.debug(type(context.get('package')))
+        log.debug([m for m in dir(context.get('package')) if not m.startswith('__')])
+
+        package = context.get('package')  # model representing the old values of the package
+        username = context.get('user')
+        user = model.User.get(username)
+        private = value
+        if (not private) and (not user.sysadmin) and (private != package.private):
+            raise toolkit.Invalid('Only sysadmin users may set datasets as public')
+        else:
+            return value
+
+#    def _modify_package_schema(self, schema):
+#        log = logging.getLogger(__name__)
+#        log.debug('\n=====publicrestrictiondatasets:_modify_package_schema(self, schema)=====')
+#        log.debug(schema)
+#
+#        schema.update({
+#            # our validator must come last, so the boolean_validator can execute first and convert value to bool
+#            'private': schema['private'] + [self._sysadmins_only]  #[toolkit.get_validator('ignore_not_sysadmin')]
+#        })
+#        return schema
 
     def create_package_schema(self):
         # let's grab the default schema in our plugin
         schema = super(PublicrestrictiondatasetsPlugin, self).create_package_schema()
         
-        schema = self._modify_package_schema(schema)
+        schema.update({
+            # our validator must come last, so the boolean_validator can execute first and convert value to bool
+            'private': schema['private'] + [self._sysadmins_only_create]  #[toolkit.get_validator('ignore_not_sysadmin')]
+        })
         return schema
 
     def update_package_schema(self):
         schema = super(PublicrestrictiondatasetsPlugin, self).update_package_schema()
         
-        schema = self._modify_package_schema(schema)
+        schema.update({
+            # our validator must come last, so the boolean_validator can execute first and convert value to bool
+            'private': schema['private'] + [self._sysadmins_only_update]  #[toolkit.get_validator('ignore_not_sysadmin')]
+        })
         return schema
 
     def is_fallback(self):
