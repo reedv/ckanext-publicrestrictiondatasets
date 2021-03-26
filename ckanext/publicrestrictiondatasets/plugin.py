@@ -20,13 +20,17 @@ class PublicrestrictiondatasetsPlugin(plugins.SingletonPlugin, toolkit.DefaultDa
 
     # IDatasetForm
 
-    def _sysadmins_only(value, context):
+    def _sysadmins_only(self, value, context):
         # ensure that only sysadmins are setting a dataset to public
         log = logging.getLogger(__name__)
         
         log.info('\n=====publicrestrictiondatasets:_sysadmins_only(value, context)=====')
         log.info(value)
+        log.info(type(value))
+        log.info([m for m in dir(value) if not m.startswith('__')])
         log.info(context)
+        log.info(type(context))
+        log.info([m for m in dir(context) if not m.startswith('__')])
         
         username = context.get('user')
         user = model.User.get(username)
@@ -37,8 +41,13 @@ class PublicrestrictiondatasetsPlugin(plugins.SingletonPlugin, toolkit.DefaultDa
             return value
 
     def _modify_package_schema(self, schema):
+        log = logging.getLogger(__name__)
+        log.info('\n=====publicrestrictiondatasets:_modify_package_schema(self, schema)=====')
+        log.info(schema)
+
         schema.update({
-            'private': [self._sysadmins_only] + schema['private']  #[toolkit.get_validator('ignore_not_sysadmin')]
+            # our validator must come last, so the boolean_validator can execute first and convert value to bool
+            'private': schema['private'] + [self._sysadmins_only]  #[toolkit.get_validator('ignore_not_sysadmin')]
         })
         return schema
 
