@@ -32,6 +32,10 @@ ckanext-publicrestrictiondatasets
    What does it do? What features does it have?
    Consider including some screenshots or embedding a video!
 
+Adds restrictions to datasets so that only sysadmin users can set visibility to Public.
+This is in order to make CKAN's behavior match closer how it (used to be) is described here (https://ckan.org/portfolio/publish-and-manage-data/)
+For use cases where siloed teams may need to keep certain datasets hidden from public, but stil want to release select datasets and/or catalog for internal purposes. Giving only sysadmins control of when datasets can be set public helps keep this restriction for compliance purposes while still letting Editor users add to the other metadata fields for datasets.
+
 
 ------------
 Requirements
@@ -40,6 +44,7 @@ Requirements
 For example, you might want to mention here which versions of CKAN this
 extension works with.
 
+Tested for CKAN v2.9.1
 
 ------------
 Installation
